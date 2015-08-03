@@ -13,11 +13,34 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
 
             var slider;
             var tabsBar;
+            var lastScrollX;
 
             var options = {
                 "slideTabsScrollable": true
             }
 
+
+            var scrollTo = function(x, targetIndex) {
+                // scrolling to same position, ignore.
+                if(x === lastScrollX)
+                    return;
+
+                // save scroll X.
+                lastScrollX = x;
+
+                // if diff. between current and target X is less than
+                // say 50% of window width, we don't need to scroll
+                // this doesn't work perfectly till target tab's position
+                // is considered.
+                var thresholdX = window.innerWidth * 0.5;
+                var scrollPosition = ionicScrollDelegate.getScrollPosition();
+                // console.info(scrollPosition.left);
+                if(Math.abs(x - scrollPosition.left) > thresholdX) {
+                    ionicScrollDelegate.scrollTo(x, 0, true);
+                }
+
+                // console.info('scrollTo', x, targetIndex, Date.now());
+            }
 
             var init = function () {
 
@@ -35,7 +58,7 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
                     else {
                       ionicScrollDelegateID = "ion-slide-tabs-handle-" + Math.floor((Math.random() * 10000) + 1);
                     }
-                    tabsBar = angular.element('<ion-scroll delegate-handle="' + ionicScrollDelegateID + '" class="slidingTabs" direction="x" scrollbar-x="false"><ul>' + tabItems + '</ul> <div class="tab-indicator-wrapper"><div class="tab-indicator"></div></div> </ion-scroll>');
+                    tabsBar = angular.element('<ion-scroll delegate-handle="' + ionicScrollDelegateID + '" class="slidingTabs" direction="x" scrollbar-x="false"><ul>' + tabItems + '</ul></ion-scroll>');
 
                 }
                 else {
@@ -88,6 +111,7 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
             }
 
             var setTabBarWidth = function() {
+                // console.info('setTabBarWidth', Date.now());
 
                 if( !angular.isDefined(slideTabs) || slideTabs.length == 0 ) {
                     return false;
@@ -103,20 +127,21 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
                 });
 
                 if(options.slideTabsScrollable) {
-
+                    // console.warn(Date.now());
                     angular.element(tabsBar[0].querySelector(".scroll")).css("width", tabsWidth + 1 + "px");
-
+                    // console.warn(Date.now());
                 }
                 else {
 
                     slideTabs.css("width",tabsList[0].offsetWidth / slideTabs.length + "px");
                 }
 
-                slideToCurrentPosition();
+                // slideToCurrentPosition();
 
             };
 
             var addTabTouchAnimation = function(event,currentElement) {
+                console.info('addTabTouchAnimation', Date.now());
 
                 var ink = angular.element(currentElement[0].querySelector(".ink"));
 
@@ -146,7 +171,7 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
             }
 
             var slideToCurrentPosition = function() {
-
+                // console.info('slideToCurrentPosition', Date.now());
                 if( !angular.isDefined(slideTabs) || slideTabs.length == 0 ) {
                     return false;
                 }
@@ -157,73 +182,81 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
                 var targetLeftOffset = targetTab.prop("offsetLeft");
                 var targetWidth = targetTab[0].offsetWidth;
 
+                // console.info('slideToCurrentPosition: 1', Date.now());
 
+                // indicator.css({
+                //     "-webkit-transition-duration": "50ms",
+                //     "-webkit-transform":"translate(" + targetLeftOffset + "px,0px)",
+                //     "width": targetWidth + "px"
+                // });
 
-                indicator.css({
-                    "-webkit-transition-duration": "50ms",
-                    "-webkit-transform":"translate(" + targetLeftOffset + "px,0px)",
-                    "width": targetWidth + "px"
-                });
+                // console.info('slideToCurrentPosition: 2', Date.now());
 
                 if (options.slideTabsScrollable && ionicScrollDelegate) {
                     var scrollOffset = 40;
-                    ionicScrollDelegate.scrollTo(targetLeftOffset - scrollOffset,0,true);
+                    scrollTo(targetLeftOffset - scrollOffset, targetSlideIndex);
                 }
 
                 slideTabs.removeClass("tab-active");
                 targetTab.addClass("tab-active");
-
+                // console.info('slideToCurrentPosition: 4', Date.now());
             }
 
 
             var setIndicatorPosition = function (currentSlideIndex, targetSlideIndex, position, slideDirection) {
 
-                var targetTab = angular.element(slideTabs[targetSlideIndex]);
+                // console.info('setIndicatorPosition', Date.now());
+                // var targetTab = angular.element(slideTabs[targetSlideIndex]);
 
-                var currentTab = angular.element(slideTabs[currentSlideIndex]);
-                var targetLeftOffset = targetTab.prop("offsetLeft");
+                // var currentTab = angular.element(slideTabs[currentSlideIndex]);
+                // var targetLeftOffset = targetTab.prop("offsetLeft");
 
-                var currentLeftOffset = currentTab.prop("offsetLeft");
-                var offsetLeftDiff = Math.abs(targetLeftOffset - currentLeftOffset);
-
-
-                if( currentSlideIndex == 0 && targetSlideIndex == ionicSlideBoxDelegate.slidesCount() - 1 && slideDirection == "right" ||
-                    targetSlideIndex == 0 && currentSlideIndex == ionicSlideBoxDelegate.slidesCount() - 1 && slideDirection == "left" ) {
-                    return;
-                }
-
-                var targetWidth = targetTab[0].offsetWidth;
-                var currentWidth = currentTab[0].offsetWidth;
-                var widthDiff = targetWidth - currentWidth;
-
-                var indicatorPos = 0;
-                var indicatorWidth = 0;
-
-                if (currentSlideIndex > targetSlideIndex) {
-
-                    indicatorPos = targetLeftOffset - (offsetLeftDiff * (position - 1));
-                    indicatorWidth = targetWidth - ((widthDiff * (1 - position)));
-
-                }
-                else if (targetSlideIndex > currentSlideIndex) {
-
-                    indicatorPos = targetLeftOffset + (offsetLeftDiff * (position - 1));
-                    indicatorWidth = targetWidth + ((widthDiff * (position - 1)));
-
-                }
+                // var currentLeftOffset = currentTab.prop("offsetLeft");
+                // var offsetLeftDiff = Math.abs(targetLeftOffset - currentLeftOffset);
 
 
-                indicator.css({
-                    "-webkit-transition-duration":"0ms",
-                    "-webkit-transform":"translate(" + indicatorPos + "px,0px)",
-                    "width": indicatorWidth + "px"
-                });
+                // if( currentSlideIndex == 0 && targetSlideIndex == ionicSlideBoxDelegate.slidesCount() - 1 && slideDirection == "right" ||
+                //     targetSlideIndex == 0 && currentSlideIndex == ionicSlideBoxDelegate.slidesCount() - 1 && slideDirection == "left" ) {
+                //     return;
+                // }
 
+                // // console.info('setIndicatorPosition 1', Date.now());
+                // var targetWidth = targetTab[0].offsetWidth;
+                // var currentWidth = currentTab[0].offsetWidth;
+                // var widthDiff = targetWidth - currentWidth;
 
-                if (options.slideTabsScrollable && ionicScrollDelegate) {
-                    var scrollOffset = 40;
-                    ionicScrollDelegate.scrollTo(indicatorPos - scrollOffset,0,false);
-                }
+                // var indicatorPos = 0;
+                // var indicatorWidth = 0;
+
+                // if (currentSlideIndex > targetSlideIndex) {
+
+                //     indicatorPos = targetLeftOffset - (offsetLeftDiff * (position - 1));
+                //     indicatorWidth = targetWidth - ((widthDiff * (1 - position)));
+
+                // }
+                // else if (targetSlideIndex > currentSlideIndex) {
+
+                //     indicatorPos = targetLeftOffset + (offsetLeftDiff * (position - 1));
+                //     indicatorWidth = targetWidth + ((widthDiff * (position - 1)));
+
+                // }
+
+                // console.info('setIndicatorPosition 2', Date.now());
+                // indicator.css({
+                //     "-webkit-transition-duration":"0ms",
+                //     "-webkit-transform":"translate(" + indicatorPos + "px,0px)",
+                //     "width": indicatorWidth + "px"
+                // });
+
+                // console.info('setIndicatorPosition 3', Date.now());
+
+                // if (options.slideTabsScrollable && ionicScrollDelegate) {
+                //     var scrollOffset = 40;
+                //     var scrollTo = indicatorPos - scrollOffset;
+                //     ionicScrollDelegate.scrollTo(scrollTo ,0,false);
+                //     console.info('scroll To: ', scrollTo, Date.now());
+                //     // console.info('setIndicatorPosition 4', Date.now());
+                // }
 
             }
 
@@ -231,8 +264,8 @@ var slidingTabsDirective = angular.module("ionic").directive('ionSlideTabs', ['$
                 if (angular.isUndefined(attrs.ionSlideTouchAnimation) || attrs.ionSlideTouchAnimation !== "false" ) {
                   addTabTouchAnimation(event, angular.element(event.currentTarget) );
                 }
-                ionicSlideBoxDelegate.slide(index);
                 slideToCurrentPosition();
+                ionicSlideBoxDelegate.slide(index, 0);
             }
 
             scope.tabs = [];
